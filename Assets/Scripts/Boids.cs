@@ -54,7 +54,6 @@ namespace ThousandAnt.Boids {
         [ReadOnly]
         public NativeArray<float3> Position;
 
-        [WriteOnly]
         [NativeDisableParallelForRestriction]
         public NativeArray<float3> AccumulatedVelocity;
 
@@ -81,12 +80,44 @@ namespace ThousandAnt.Boids {
 
         public float DeltaTime;
 
-        [ReadOnly]
+        [NativeDisableParallelForRestriction]
         public NativeArray<float3> AccumulatedVelocity;
 
         public void Execute(int index) {
-            // TODO: Adjust the velocities so they are all similar.
-            throw new System.NotImplementedException();
+            var velocity = new float3();
+
+            for (int i = 0; i < AccumulatedVelocity.Length; i++) {
+                if (i != index) {
+                    velocity += AccumulatedVelocity[i];
+                }
+            }
+
+            velocity /= (AccumulatedVelocity.Length - 1);
+
+            AccumulatedVelocity[index] = velocity;
+        }
+    }
+
+    [BurstCompile]
+    public struct GoalJob : IJobParallelFor {
+
+
+        public void Execute(int index) {
+        }
+    }
+
+    [BurstCompile]
+    public struct VelocityApplicationJob : IJobParallelFor {
+
+        // TODO: Add velocity clamping so the boids don't infinitely become fast.
+
+        [ReadOnly]
+        public NativeArray<float3> Velocities;
+
+        public NativeArray<float3> Positions;
+
+        public void Execute(int index) {
+            Positions[index] += Velocities[index];
         }
     }
 }
