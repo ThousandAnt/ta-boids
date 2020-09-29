@@ -14,6 +14,14 @@ namespace ThousandAnt.Boids {
         public float SeparationDistance = 10f;
         public float Radius = 20;
         public int Size = 512;
+        public float MaxSpeed = 2f;
+
+        [Header("Goal Setting")]
+        public bool AllowDestination;
+        public Transform Destination;
+
+        [Header("Tendency")]
+        public float3 Wind;
 
         private NativeArray<float3> positions;
         private NativeArray<float3> velocities;
@@ -51,19 +59,20 @@ namespace ThousandAnt.Boids {
 
             var dt = Time.deltaTime;
 
-            boidsHandle = new VelocityApplicationJob {
-                Positions = positions,
-                Velocities = velocities
+            boidsHandle    = new VelocityApplicationJob {
+                Wind       = Wind,
+                DeltaTime  = dt,
+                Positions  = positions,
+                Velocities = velocities,
+                MaxSpeed   = MaxSpeed
             }.Schedule(positions.Length, 32);
 
             boidsHandle = new PerceivedCenterJob {
-                DeltaTime           = dt,
                 AccumulatedVelocity = velocities,
                 Positions           = positions,
             }.Schedule(positions.Length, 32, boidsHandle);
 
             boidsHandle = new SeparationJob {
-                DeltaTime = dt,
                 AccumulatedVelocity = velocities,
                 Position = positions,
                 SeparationDistanceSq = SeparationDistance * SeparationDistance
@@ -71,9 +80,15 @@ namespace ThousandAnt.Boids {
 
             boidsHandle = new AlignmentJob {
                 AccumulatedVelocity = velocities,
-                DeltaTime           = dt,
             }.Schedule(positions.Length, 32, boidsHandle);
 
+            if (AllowDestination) {
+                boidsHandle = new GoalJob {
+                    Positions = positions,
+                    Velocities = velocities,
+                    Destination = Destination.position
+                }.Schedule(positions.Length, 32, boidsHandle);
+            }
         }
 
         // TODO: Account for steering and looking at the velocity.

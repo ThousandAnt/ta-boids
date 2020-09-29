@@ -17,8 +17,6 @@ namespace ThousandAnt.Boids {
     [BurstCompile]
     public struct PerceivedCenterJob : IJobParallelFor {
 
-        public float DeltaTime;
-        
         [ReadOnly]
         public NativeArray<float3> Positions;
 
@@ -38,7 +36,7 @@ namespace ThousandAnt.Boids {
                 center += Positions[i];
             }
 
-            AccumulatedVelocity[index] = (currentPosition - center / (Positions.Length - 1)) * DeltaTime;
+            AccumulatedVelocity[index] = (currentPosition - center / (Positions.Length - 1));
         }
     }
 
@@ -48,7 +46,6 @@ namespace ThousandAnt.Boids {
     [BurstCompile]
     public struct SeparationJob : IJobParallelFor {
         
-        public float DeltaTime;
         public float SeparationDistanceSq;
 
         [ReadOnly]
@@ -71,14 +68,12 @@ namespace ThousandAnt.Boids {
                 }
             }
 
-            AccumulatedVelocity[index] += center * DeltaTime;
+            AccumulatedVelocity[index] += center;
         }
     }
 
     [BurstCompile]
     public struct AlignmentJob : IJobParallelFor {
-
-        public float DeltaTime;
 
         [NativeDisableParallelForRestriction]
         public NativeArray<float3> AccumulatedVelocity;
@@ -100,24 +95,42 @@ namespace ThousandAnt.Boids {
 
     [BurstCompile]
     public struct GoalJob : IJobParallelFor {
+        
+        public float3 Destination;
 
+        [ReadOnly]
+        public NativeArray<float3> Positions;
+
+        public NativeArray<float3> Velocities;
 
         public void Execute(int index) {
+            var position = Positions[index];
+            Velocities[index] += (Destination - position);
         }
     }
 
     [BurstCompile]
     public struct VelocityApplicationJob : IJobParallelFor {
 
-        // TODO: Add velocity clamping so the boids don't infinitely become fast.
+        public float MaxSpeed;
+        public float DeltaTime;
+        public float3 Wind;
 
+        // TODO: Add velocity clamping so the boids don't infinitely become fast.
         [ReadOnly]
         public NativeArray<float3> Velocities;
 
         public NativeArray<float3> Positions;
 
         public void Execute(int index) {
-            Positions[index] += Velocities[index];
+            var velocity = Velocities[index] + Wind;
+            var magnitude = math.length(velocity);
+
+            if (magnitude > MaxSpeed) {
+                velocity = velocity / magnitude * MaxSpeed;
+            }
+
+            Positions[index] += velocity * DeltaTime;
         }
     }
 }
