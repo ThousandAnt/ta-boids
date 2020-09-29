@@ -11,11 +11,13 @@ namespace ThousandAnt.Boids {
     // TODO: Goal setting per flocking group.
 
     /**
-     * Each member in a flock tries to move towards its perceived center. So the center calculation is divided by 
+     * Each member in a flock tries to move towards its perceived center. So the center calculation is divided by
      * (n - 1). This is our primary rule, otherwise known as Cohesion in boids.
      */
     [BurstCompile]
     public struct PerceivedCenterJob : IJobParallelFor {
+
+        public float Weight;
 
         [ReadOnly]
         public NativeArray<float3> Positions;
@@ -36,7 +38,9 @@ namespace ThousandAnt.Boids {
                 center += Positions[i];
             }
 
-            AccumulatedVelocity[index] = (currentPosition - center / (Positions.Length - 1));
+            center /= (Positions.Length - 1);
+
+            AccumulatedVelocity[index] = Weight * (center - currentPosition);
         }
     }
 
@@ -45,7 +49,9 @@ namespace ThousandAnt.Boids {
      */
     [BurstCompile]
     public struct SeparationJob : IJobParallelFor {
-        
+
+        public float Weight;
+
         public float SeparationDistanceSq;
 
         [ReadOnly]
@@ -68,12 +74,14 @@ namespace ThousandAnt.Boids {
                 }
             }
 
-            AccumulatedVelocity[index] += center;
+            AccumulatedVelocity[index] += Weight * center;
         }
     }
 
     [BurstCompile]
     public struct AlignmentJob : IJobParallelFor {
+
+        public float Weight;
 
         [NativeDisableParallelForRestriction]
         public NativeArray<float3> AccumulatedVelocity;
@@ -87,7 +95,7 @@ namespace ThousandAnt.Boids {
                 }
             }
 
-            velocity /= (AccumulatedVelocity.Length - 1);
+            velocity = Weight * velocity / (AccumulatedVelocity.Length - 1);
 
             AccumulatedVelocity[index] = velocity;
         }
@@ -95,7 +103,9 @@ namespace ThousandAnt.Boids {
 
     [BurstCompile]
     public struct GoalJob : IJobParallelFor {
-        
+
+        public float Weight;
+
         public float3 Destination;
 
         [ReadOnly]
@@ -105,7 +115,7 @@ namespace ThousandAnt.Boids {
 
         public void Execute(int index) {
             var position = Positions[index];
-            Velocities[index] += (Destination - position);
+            Velocities[index] += Weight * (Destination - position);
         }
     }
 

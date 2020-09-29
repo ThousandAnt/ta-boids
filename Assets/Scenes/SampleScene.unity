@@ -155,8 +155,17 @@ MonoBehaviour:
   SeparationDistance: 15
   Radius: 50
   Size: 512
-  MaxSpeed: 3
+  MaxSpeed: 15
+  CenterWeight: 1
+  SeparationWeight: -10
+  AlignmentWeight: 1
+  GoalWeight: 1
+  AllowDestination: 1
   Destination: {fileID: 1231730117}
+  Wind:
+    x: 0
+    y: 0
+    z: 0
 --- !u!4 &532041481
 Transform:
   m_ObjectHideFlags: 0
@@ -370,7 +379,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1231730116}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 16.37, y: 0, z: 0}
+  m_LocalPosition: {x: 16.37, y: 0, z: 363.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

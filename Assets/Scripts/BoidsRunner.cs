@@ -16,6 +16,12 @@ namespace ThousandAnt.Boids {
         public int Size = 512;
         public float MaxSpeed = 2f;
 
+        [Header("Weights")]
+        public float CenterWeight     = 1f;
+        public float SeparationWeight = 1f;
+        public float AlignmentWeight  = 1f;
+        public float GoalWeight       = 1f;
+
         [Header("Goal Setting")]
         public bool AllowDestination;
         public Transform Destination;
@@ -67,25 +73,29 @@ namespace ThousandAnt.Boids {
                 MaxSpeed   = MaxSpeed
             }.Schedule(positions.Length, 32);
 
-            boidsHandle = new PerceivedCenterJob {
+            boidsHandle             = new PerceivedCenterJob {
+                Weight              = CenterWeight,
                 AccumulatedVelocity = velocities,
                 Positions           = positions,
             }.Schedule(positions.Length, 32, boidsHandle);
 
-            boidsHandle = new SeparationJob {
-                AccumulatedVelocity = velocities,
-                Position = positions,
+            boidsHandle              = new SeparationJob {
+                Weight               = SeparationWeight,
+                AccumulatedVelocity  = velocities,
+                Position             = positions,
                 SeparationDistanceSq = SeparationDistance * SeparationDistance
             }.Schedule(positions.Length, 32, boidsHandle);
 
-            boidsHandle = new AlignmentJob {
+            boidsHandle             = new AlignmentJob {
+                Weight              = AlignmentWeight,
                 AccumulatedVelocity = velocities,
             }.Schedule(positions.Length, 32, boidsHandle);
 
             if (AllowDestination) {
-                boidsHandle = new GoalJob {
-                    Positions = positions,
-                    Velocities = velocities,
+                boidsHandle     = new GoalJob {
+                    Weight      = GoalWeight,
+                    Positions   = positions,
+                    Velocities  = velocities,
                     Destination = Destination.position
                 }.Schedule(positions.Length, 32, boidsHandle);
             }
