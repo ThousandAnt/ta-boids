@@ -21,6 +21,7 @@ namespace ThousandAnt.Boids {
         public float SeparationWeight = 1f;
         public float AlignmentWeight  = 1f;
         public float GoalWeight       = 1f;
+        public Weights Weights        = Weights.Default();
 
         [Header("Goal Setting")]
         public bool AllowDestination;
@@ -29,6 +30,9 @@ namespace ThousandAnt.Boids {
         [Header("Tendency")]
         public float3 Wind;
 
+        [Header("Job Option")]
+        public bool Combined;
+
         private NativeArray<float3> positions;
         private NativeArray<float3> velocities;
         private JobHandle boidsHandle;
@@ -36,7 +40,7 @@ namespace ThousandAnt.Boids {
         private Matrix4x4[] matrices;
 
         private void Start() {
-            positions = new NativeArray<float3>(Size, Allocator.Persistent);
+            positions  = new NativeArray<float3>(Size, Allocator.Persistent);
             velocities = new NativeArray<float3>(Size, Allocator.Persistent);
 
             for (int i = 0; i < Size; i++) {
@@ -60,6 +64,8 @@ namespace ThousandAnt.Boids {
         }
 
         private void Update() {
+            Graphics.DrawMeshInstanced(Mesh, 0, Material, matrices);
+
             boidsHandle.Complete();
             CopyMatrixData();
 
@@ -73,23 +79,33 @@ namespace ThousandAnt.Boids {
                 MaxSpeed   = MaxSpeed
             }.Schedule(positions.Length, 32);
 
-            boidsHandle             = new PerceivedCenterJob {
-                Weight              = CenterWeight,
-                AccumulatedVelocity = velocities,
-                Positions           = positions,
-            }.Schedule(positions.Length, 32, boidsHandle);
+            if (Combined) {
+                boidsHandle = new BatchedJob {
+                    BoidWeights = Weights,
+                    DeltaTime   = dt,
+                    MaxDistSq   = SeparationDistance * SeparationDistance,
+                    Positions   = positions,
+                    Velocities  = velocities,
+                }.Schedule(positions.Length, 32, boidsHandle);
+            } else {
+                boidsHandle             = new CohesionJob {
+                    Weight              = CenterWeight,
+                    AccumulatedVelocity = velocities,
+                    Positions           = positions,
+                }.Schedule(positions.Length, 32, boidsHandle);
 
-            boidsHandle              = new SeparationJob {
-                Weight               = SeparationWeight,
-                AccumulatedVelocity  = velocities,
-                Position             = positions,
-                SeparationDistanceSq = SeparationDistance * SeparationDistance
-            }.Schedule(positions.Length, 32, boidsHandle);
+                boidsHandle              = new SeparationJob {
+                    Weight               = SeparationWeight,
+                    AccumulatedVelocity  = velocities,
+                    Position             = positions,
+                    SeparationDistanceSq = SeparationDistance * SeparationDistance
+                }.Schedule(positions.Length, 32, boidsHandle);
 
-            boidsHandle             = new AlignmentJob {
-                Weight              = AlignmentWeight,
-                AccumulatedVelocity = velocities,
-            }.Schedule(positions.Length, 32, boidsHandle);
+                boidsHandle             = new AlignmentJob {
+                    Weight              = AlignmentWeight,
+                    AccumulatedVelocity = velocities,
+                }.Schedule(positions.Length, 32, boidsHandle);
+            }
 
             if (AllowDestination) {
                 boidsHandle     = new GoalJob {
@@ -106,10 +122,6 @@ namespace ThousandAnt.Boids {
             for (int i = 0; i < matrices.Length; i++) {
                 matrices[i] = Matrix4x4.TRS(positions[i], quaternion.identity, Vector3.one);
             }
-        }
-
-        private void LateUpdate() {
-            Graphics.DrawMeshInstanced(Mesh, 0, Material, matrices);
         }
     }
 }

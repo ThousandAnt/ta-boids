@@ -1,9 +1,71 @@
-﻿using Unity.Burst;
+﻿using System;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace ThousandAnt.Boids {
+
+    [Serializable]
+    public struct Weights {
+        public float AlignmentWeight;
+        public float CohesionWeight;
+        public float SeparationWeight;
+        public float GoalWeight;
+
+        public static Weights Default() {
+            return new Weights {
+                AlignmentWeight  = 1,
+                CohesionWeight   = 1,
+                SeparationWeight = 1,
+                GoalWeight       = 1,
+            };
+        }
+    }
+
+    public struct BatchedJob : IJobParallelFor {
+
+        public Weights BoidWeights;
+
+        public float DeltaTime;
+        public float MaxDistSq;
+
+        [ReadOnly]
+        public NativeArray<float3> Positions;
+
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float3> Velocities;
+
+        public void Execute(int index) {
+            var center = new float3();
+            var c = new float3();
+            var v = new float3();
+            for (int i = 0; i < Positions.Length; i++) {
+                if (i != index) {
+                    // Find the center for cohesion
+                    center += Positions[i];
+
+                    // Separate away from other flock members
+                    var distSq = math.distancesq(Positions[i], Positions[index]);
+                    if (distSq < MaxDistSq) {
+                        c = c - (Positions[i] - Positions[index]);
+                    }
+
+                    // Align all the velocities;
+                    v += Velocities[i];
+                }
+            }
+
+            var perceivedSize = Positions.Length - 1;
+            v /= perceivedSize;
+
+            var cohesionV     = (center / perceivedSize) * BoidWeights.CohesionWeight * DeltaTime;
+            var separationV   = c * BoidWeights.SeparationWeight * DeltaTime;
+            var alignmentV    = (v - Velocities[index]) * BoidWeights.AlignmentWeight * DeltaTime;
+
+            Velocities[index] = cohesionV + separationV + alignmentV;
+        }
+    }
 
     // TODO: Check if this needs to be combined into one job, otherwise it would be better if they just ran.
     // TODO: Currently assuming that all data is persistent data we want to manipulate.
@@ -15,14 +77,14 @@ namespace ThousandAnt.Boids {
      * (n - 1). This is our primary rule, otherwise known as Cohesion in boids.
      */
     [BurstCompile]
-    public struct PerceivedCenterJob : IJobParallelFor {
+    public struct CohesionJob : IJobParallelFor {
 
         public float Weight;
+        public float DeltaTime;
 
         [ReadOnly]
         public NativeArray<float3> Positions;
 
-        [WriteOnly]
         [NativeDisableParallelForRestriction]
         public NativeArray<float3> AccumulatedVelocity;
 
@@ -96,7 +158,6 @@ namespace ThousandAnt.Boids {
             }
 
             velocity = Weight * velocity / (AccumulatedVelocity.Length - 1);
-
             AccumulatedVelocity[index] = velocity;
         }
     }
@@ -140,7 +201,7 @@ namespace ThousandAnt.Boids {
                 velocity = velocity / magnitude * MaxSpeed;
             }
 
-            Positions[index] += velocity * DeltaTime;
+            Positions[index] += velocity;
         }
     }
 }

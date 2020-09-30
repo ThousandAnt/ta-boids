@@ -152,20 +152,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   Material: {fileID: 2100000, guid: e23bdf529a405ae4d8965e2fe77e6267, type: 2}
-  SeparationDistance: 15
-  Radius: 50
-  Size: 512
-  MaxSpeed: 15
+  SeparationDistance: 10
+  Radius: 30
+  Size: 511
+  MaxSpeed: 3
   CenterWeight: 1
-  SeparationWeight: -10
+  SeparationWeight: 1
   AlignmentWeight: 1
   GoalWeight: 1
-  AllowDestination: 1
+  Weights:
+    AlignmentWeight: 1
+    CohesionWeight: 1
+    SeparationWeight: 1
+    GoalWeight: 1
+  AllowDestination: 0
   Destination: {fileID: 1231730117}
   Wind:
     x: 0
     y: 0
     z: 0
+  Combined: 1
 --- !u!4 &532041481
 Transform:
   m_ObjectHideFlags: 0
