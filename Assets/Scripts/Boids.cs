@@ -107,7 +107,7 @@ namespace ThousandAnt.Boids {
                 finalRotation = Quaternion.Lerp(rotation, finalRotation, t);
             }
 
-            var pNoise = Mathf.PerlinNoise(Time, NoiseOffsets[index]) * 2f - 1f;
+            var pNoise = math.abs(noise.cnoise(new float2(Time, NoiseOffsets[index])) * 2f - 1f);
             var speedNoise = Speed * (1f + pNoise * 0.9f);
             var finalPosition = currentPos + current.Forward() * speedNoise * DeltaTime;
 
