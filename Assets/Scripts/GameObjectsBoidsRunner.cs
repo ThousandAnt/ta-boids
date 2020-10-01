@@ -32,22 +32,22 @@ namespace ThousandAnt.Boids {
 
         private JobHandle boidsHandle;
 
-        private float noiseOffset;
+        private NativeArray<float> noiseOffsets;
 
         private void Start() {
             transforms   = new Transform[Size];
-            srcMatrices     = new NativeArray<float4x4>(transforms.Length, Allocator.Persistent);
-            // dstMatrices = new NativeArray<float4x4>(transforms.Length, Allocator.Persistent);
+            srcMatrices  = new NativeArray<float4x4>(transforms.Length, Allocator.Persistent);
+            noiseOffsets = new NativeArray<float>(transforms.Length, Allocator.Persistent);
 
             for (int i = 0; i < Size; i++) {
-                var pos        = transform.position + URandom.insideUnitSphere * Radius;
-                var rotation   = Quaternion.Slerp(transform.rotation, URandom.rotation, 0.3f);
-                transforms[i]  = GameObject.Instantiate(FlockMember, pos, rotation) as Transform;
-                srcMatrices[i] = transforms[i].localToWorldMatrix;
+                var pos         = transform.position + URandom.insideUnitSphere * Radius;
+                var rotation    = Quaternion.Slerp(transform.rotation, URandom.rotation, 0.3f);
+                transforms[i]   = GameObject.Instantiate(FlockMember, pos, rotation) as Transform;
+                srcMatrices[i]  = transforms[i].localToWorldMatrix;
+                noiseOffsets[i] = URandom.value * 10f;
             }
 
             transformAccessArray = new TransformAccessArray(transforms);
-            noiseOffset = URandom.value * 10f;
         }
 
         private void OnDisable() {
@@ -56,12 +56,16 @@ namespace ThousandAnt.Boids {
             if (srcMatrices.IsCreated) {
                 srcMatrices.Dispose();
             }
+
+            if (noiseOffsets.IsCreated) {
+                noiseOffsets.Dispose();
+            }
         }
 
         private unsafe void Update() {
             boidsHandle.Complete();
             boidsHandle             = new BatchedJob {
-                NoiseOffset         = noiseOffset,
+                NoiseOffsets        = noiseOffsets,
                 Time                = Time.time,
                 DeltaTime           = Time.deltaTime,
                 MaxDist             = SeparationDistance,

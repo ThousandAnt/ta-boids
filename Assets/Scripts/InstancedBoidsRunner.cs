@@ -46,20 +46,27 @@ namespace ThousandAnt.Boids {
         private PinnedMatrixArray srcMatrices;
         private JobHandle boidsHandle;
         private MaterialPropertyBlock tempBlock;
+        private NativeArray<float> noiseOffsets;
 
         private void Start() {
             tempBlock = new MaterialPropertyBlock();
             srcMatrices = new PinnedMatrixArray(Size);
+            noiseOffsets = new NativeArray<float>(Size, Allocator.Persistent);
 
             for (int i = 0; i < Size; i++) {
                 var pos               = transform.position + URandom.insideUnitSphere * Radius;
                 var rotation          = Quaternion.Slerp(transform.rotation, URandom.rotation, 0.3f);
                 srcMatrices.Values[i] = float4x4.TRS(pos, rotation, Vector3.one);
+                noiseOffsets[i]       = URandom.value * 10f;
             }
         }
 
         private void OnDisable() {
             boidsHandle.Complete();
+
+            if (noiseOffsets.IsCreated) {
+                noiseOffsets.Dispose();
+            }
         }
 
         private unsafe void Update() {
@@ -78,6 +85,7 @@ namespace ThousandAnt.Boids {
                 null);
 
             boidsHandle             = new BatchedJob {
+                NoiseOffsets        = noiseOffsets,
                 Time                = Time.time,
                 DeltaTime           = Time.deltaTime,
                 MaxDist             = SeparationDistance,

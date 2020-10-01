@@ -52,13 +52,15 @@ namespace ThousandAnt.Boids {
     [BurstCompile]
     public unsafe struct BatchedJob : IJobParallelFor {
 
-        public float NoiseOffset;
         public float Time;
         public float DeltaTime;
         public float MaxDist;
         public float Speed;
         public float RotationCoefficient;
         public int   Size;
+
+        [ReadOnly]
+        public NativeArray<float> NoiseOffsets;
 
         [NativeDisableUnsafePtrRestriction]
         public float4x4* Src;
@@ -90,7 +92,7 @@ namespace ThousandAnt.Boids {
                 cohesion   += other;
             }
 
-            var avg = 1 / perceivedSize;
+            var avg = 1f / perceivedSize;
 
             alignment     *= avg;
             cohesion      *= avg;
@@ -105,7 +107,9 @@ namespace ThousandAnt.Boids {
                 finalRotation = Quaternion.Lerp(rotation, finalRotation, t);
             }
 
-            var finalPosition = currentPos + current.Forward() * Speed * DeltaTime;
+            var pNoise = Mathf.PerlinNoise(Time, NoiseOffsets[index]) * 2f - 1f;
+            var speedNoise = Speed * (1f + pNoise * 0.9f);
+            var finalPosition = currentPos + current.Forward() * speedNoise * DeltaTime;
 
             Src[index] = float4x4.TRS(finalPosition, finalRotation, new float3(1));
         }
