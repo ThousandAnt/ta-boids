@@ -147,31 +147,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 532041479}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e3b0f80f26a5907489092d8ca8f13dc1, type: 3}
+  m_Script: {fileID: 11500000, guid: bf9a446cda2750e40b02fe972865fc0c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  Mesh: {fileID: 4300000, guid: b24f1c0f5d889904e841539dde078d79, type: 2}
   Material: {fileID: 2100000, guid: e23bdf529a405ae4d8965e2fe77e6267, type: 2}
-  SeparationDistance: 10
-  Radius: 30
-  Size: 511
-  MaxSpeed: 3
-  CenterWeight: 1
-  SeparationWeight: 1
-  AlignmentWeight: 1
-  GoalWeight: 1
-  Weights:
-    AlignmentWeight: 1
-    CohesionWeight: 1
-    SeparationWeight: 1
-    GoalWeight: 1
+  Mode: 1
+  ReceiveShadows: 0
+  SeparationDistance: 2
+  Radius: 10
+  Size: 20
+  MaxSpeed: 6
+  RotationCoefficient: 4
   AllowDestination: 0
-  Destination: {fileID: 1231730117}
+  Destination: {fileID: 0}
   Wind:
     x: 0
     y: 0
     z: 0
-  Combined: 1
 --- !u!4 &532041481
 Transform:
   m_ObjectHideFlags: 0
@@ -215,7 +208,7 @@ Light:
   m_Type: 1
   m_Shape: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1
+  m_Intensity: 1.25
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -224,7 +217,7 @@ Light:
     m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
-    m_Strength: 0.4
+    m_Strength: 0.3
     m_Bias: 0.05
     m_NormalBias: 0.4
     m_NearPlane: 0.2
@@ -373,7 +366,7 @@ GameObject:
   m_Layer: 0
   m_Name: Destination
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 3306451490063965843, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -391,3 +384,59 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1718989229
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1718989230}
+  - component: {fileID: 1718989231}
+  m_Layer: 0
+  m_Name: GameObjectBoidsRunner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1718989230
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1718989229}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1718989231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1718989229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db6064c54db4411478c74f824f0fadbe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  FlockMember: {fileID: 4466358772150865389, guid: 51d63c359388129418e08c357427ade7,
+    type: 3}
+  SeparationDistance: 3
+  Radius: 10
+  Size: 100
+  MaxSpeed: 6
+  RotationCoefficient: 4
+  AllowDestination: 0
+  Destination: {fileID: 0}
+  Wind:
+    x: 0
+    y: 0
+    z: 0

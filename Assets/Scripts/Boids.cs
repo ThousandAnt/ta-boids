@@ -1,207 +1,121 @@
-﻿using System;
+﻿using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Jobs;
 
 namespace ThousandAnt.Boids {
 
-    [Serializable]
-    public struct Weights {
-        public float AlignmentWeight;
-        public float CohesionWeight;
-        public float SeparationWeight;
-        public float GoalWeight;
+    public static class TransformExtensions {
 
-        public static Weights Default() {
-            return new Weights {
-                AlignmentWeight  = 1,
-                CohesionWeight   = 1,
-                SeparationWeight = 1,
-                GoalWeight       = 1,
-            };
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion Rotation(this in float4x4 m) {
+            return new quaternion(m);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 Position(this in float4x4 m) {
+            return m.c3.xyz;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 Forward(this in float4x4 m) {
+            return m.c2.xyz;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion QuaternionBetween(this in float3 from, in float3 to) {
+            var cross = math.cross(from, to);
+
+            var w = math.sqrt(math.lengthsq(from) * math.lengthsq(to)) + math.dot(from, to);
+            return new quaternion(new float4(cross, w));
         }
     }
 
-    public struct BatchedJob : IJobParallelFor {
-
-        public Weights BoidWeights;
-
-        public float DeltaTime;
-        public float MaxDistSq;
-
-        [ReadOnly]
-        public NativeArray<float3> Positions;
-
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float3> Velocities;
-
-        public void Execute(int index) {
-            var center = new float3();
-            var c = new float3();
-            var v = new float3();
-            for (int i = 0; i < Positions.Length; i++) {
-                if (i != index) {
-                    // Find the center for cohesion
-                    center += Positions[i];
-
-                    // Separate away from other flock members
-                    var distSq = math.distancesq(Positions[i], Positions[index]);
-                    if (distSq < MaxDistSq) {
-                        c = c - (Positions[i] - Positions[index]);
-                    }
-
-                    // Align all the velocities;
-                    v += Velocities[i];
-                }
-            }
-
-            var perceivedSize = Positions.Length - 1;
-            v /= perceivedSize;
-
-            var cohesionV     = (center / perceivedSize) * BoidWeights.CohesionWeight * DeltaTime;
-            var separationV   = c * BoidWeights.SeparationWeight * DeltaTime;
-            var alignmentV    = (v - Velocities[index]) * BoidWeights.AlignmentWeight * DeltaTime;
-
-            Velocities[index] = cohesionV + separationV + alignmentV;
-        }
-    }
-
-    // TODO: Check if this needs to be combined into one job, otherwise it would be better if they just ran.
-    // TODO: Currently assuming that all data is persistent data we want to manipulate.
-    // TODO: We pay the cost of doing a copy if we want to do rendering with draw mesh instanced. (Maybe pointer is better).
-    // TODO: Goal setting per flocking group.
-
-    /**
-     * Each member in a flock tries to move towards its perceived center. So the center calculation is divided by
-     * (n - 1). This is our primary rule, otherwise known as Cohesion in boids.
-     */
     [BurstCompile]
-    public struct CohesionJob : IJobParallelFor {
-
-        public float Weight;
-        public float DeltaTime;
+    public struct CopyTransformJob : IJobParallelForTransform {
 
         [ReadOnly]
-        public NativeArray<float3> Positions;
+        public NativeArray<float4x4> Src;
 
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float3> AccumulatedVelocity;
+        public void Execute(int index, TransformAccess transform) {
+            var m = Src[index];
+
+            transform.localPosition = m.c3.xyz;
+            transform.rotation      = new quaternion(m);
+        }
+    }
+
+    [BurstCompile]
+    public unsafe struct BatchedJob : IJobParallelFor {
+
+        public float NoiseOffset;
+        public float Time;
+        public float DeltaTime;
+        public float MaxDist;
+        public float Speed;
+        public float RotationCoefficient;
+        public int   Size;
+
+        [NativeDisableUnsafePtrRestriction]
+        public float4x4* Src;
 
         public void Execute(int index) {
-            var currentPosition = Positions[index];
-            var center          = new float3();
+            var current       = Src[index];
+            var currentPos    = current.Position();
+            var perceivedSize = Size - 1;
 
-            for (int i = 0; i < Positions.Length; i++) {
+            var separation = float3.zero;
+            var alignment  = float3.zero;
+            var cohesion   = float3.zero;
+
+            for (int i = 0; i < Size; i++) {
                 if (i == index) {
                     continue;
                 }
 
-                center += Positions[i];
+                var b = Src[i];
+                var other = b.Position();
+
+                // Perform separation
+                separation += SeparationVector(currentPos, other);
+
+                // Perform alignment
+                alignment  += b.Forward();
+
+                // Perform cohesion
+                cohesion   += other;
             }
 
-            center /= (Positions.Length - 1);
+            var avg = 1 / perceivedSize;
 
-            AccumulatedVelocity[index] = Weight * (center - currentPosition);
-        }
-    }
+            alignment     *= avg;
+            cohesion      *= avg;
+            cohesion       = math.normalizesafe(cohesion - currentPos);
+            var direction  = separation + alignment + cohesion;
+            var rotation   = current.Forward().QuaternionBetween(math.normalize(direction));
 
-    /**
-     * We want all boids to generally separate and be some kind of distance away from each other.
-     */
-    [BurstCompile]
-    public struct SeparationJob : IJobParallelFor {
+            var finalRotation = current.Rotation();
 
-        public float Weight;
-
-        public float SeparationDistanceSq;
-
-        [ReadOnly]
-        public NativeArray<float3> Position;
-
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float3> AccumulatedVelocity;
-
-        public void Execute(int index) {
-            var center = new float3();
-            var currentPosition = Position[index];
-            for (int i = 0; i < Position.Length; i++) {
-                if (i == index) {
-                    continue;
-                }
-
-                // We need to separate the current boid.
-                if (math.distancesq(currentPosition, Position[i]) < SeparationDistanceSq) {
-                    center = center - (currentPosition - Position[i]);
-                }
+            if (!rotation.Equals(current.Rotation())) {
+                var t = math.exp(-RotationCoefficient * DeltaTime);
+                finalRotation = Quaternion.Lerp(rotation, finalRotation, t);
             }
 
-            AccumulatedVelocity[index] += Weight * center;
+            var finalPosition = currentPos + current.Forward() * Speed * DeltaTime;
+
+            Src[index] = float4x4.TRS(finalPosition, finalRotation, new float3(1));
         }
-    }
 
-    [BurstCompile]
-    public struct AlignmentJob : IJobParallelFor {
+        float3 SeparationVector(in float3 current, in float3 other) {
+            var diff   = current - other;
+            var mag    = math.length(diff);
+            var scalar = math.clamp(1 - mag / MaxDist, 0, 1);
 
-        public float Weight;
-
-        [NativeDisableParallelForRestriction]
-        public NativeArray<float3> AccumulatedVelocity;
-
-        public void Execute(int index) {
-            var velocity = new float3();
-
-            for (int i = 0; i < AccumulatedVelocity.Length; i++) {
-                if (i != index) {
-                    velocity += AccumulatedVelocity[i];
-                }
-            }
-
-            velocity = Weight * velocity / (AccumulatedVelocity.Length - 1);
-            AccumulatedVelocity[index] = velocity;
-        }
-    }
-
-    [BurstCompile]
-    public struct GoalJob : IJobParallelFor {
-
-        public float Weight;
-
-        public float3 Destination;
-
-        [ReadOnly]
-        public NativeArray<float3> Positions;
-
-        public NativeArray<float3> Velocities;
-
-        public void Execute(int index) {
-            var position = Positions[index];
-            Velocities[index] += Weight * (Destination - position);
-        }
-    }
-
-    [BurstCompile]
-    public struct VelocityApplicationJob : IJobParallelFor {
-
-        public float MaxSpeed;
-        public float DeltaTime;
-        public float3 Wind;
-
-        // TODO: Add velocity clamping so the boids don't infinitely become fast.
-        [ReadOnly]
-        public NativeArray<float3> Velocities;
-
-        public NativeArray<float3> Positions;
-
-        public void Execute(int index) {
-            var velocity = Velocities[index] + Wind;
-            var magnitude = math.length(velocity);
-
-            if (magnitude > MaxSpeed) {
-                velocity = velocity / magnitude * MaxSpeed;
-            }
-
-            Positions[index] += velocity;
+            return diff * (scalar / mag);
         }
     }
 }
