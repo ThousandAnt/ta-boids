@@ -50,6 +50,28 @@ namespace ThousandAnt.Boids {
     }
 
     [BurstCompile]
+    public unsafe struct AverageCenterJob : IJob {
+
+        [NativeDisableUnsafePtrRestriction]
+        public Matrix4x4* Matrices;
+
+        [NativeDisableUnsafePtrRestriction]
+        public float3* Center;
+
+        public int Size;
+
+        public void Execute() {
+            var center = float3.zero;
+            for (int i = 0; i < Size; i++) {
+                float4x4 m = Matrices[i];
+                center += m.Position();
+            }
+
+            *Center = center /= Size;
+        }
+    }
+
+    [BurstCompile]
     public unsafe struct BatchedJob : IJobParallelFor {
 
         public float Time;

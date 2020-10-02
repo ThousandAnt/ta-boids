@@ -1,4 +1,5 @@
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -23,7 +24,7 @@ namespace ThousandAnt.Boids {
         }
     }
 
-    public class InstancedBoidsRunner : MonoBehaviour {
+    public unsafe class InstancedBoidsRunner : MonoBehaviour {
 
         public Mesh              Mesh;
         public Material          Material;
@@ -47,6 +48,7 @@ namespace ThousandAnt.Boids {
         private JobHandle boidsHandle;
         private MaterialPropertyBlock tempBlock;
         private NativeArray<float> noiseOffsets;
+        private float3* centerFlock;
 
         private void Start() {
             tempBlock = new MaterialPropertyBlock();
@@ -59,6 +61,13 @@ namespace ThousandAnt.Boids {
                 srcMatrices.Values[i] = float4x4.TRS(pos, rotation, Vector3.one);
                 noiseOffsets[i]       = URandom.value * 10f;
             }
+
+            centerFlock = (float3*)UnsafeUtility.Malloc(
+                UnsafeUtility.SizeOf<float3>(),
+                UnsafeUtility.AlignOf<float3>(),
+                Allocator.Persistent);
+
+            UnsafeUtility.MemSet(centerFlock, 0, UnsafeUtility.SizeOf<float3>());
         }
 
         private void OnDisable() {
@@ -67,10 +76,19 @@ namespace ThousandAnt.Boids {
             if (noiseOffsets.IsCreated) {
                 noiseOffsets.Dispose();
             }
+
+            // Free this memory
+            if (centerFlock != null) {
+                UnsafeUtility.Free(centerFlock, Allocator.Persistent);
+                centerFlock = null;
+            }
         }
 
         private unsafe void Update() {
             boidsHandle.Complete();
+
+            // Set up the transform so that we have cinemachine to look at
+            transform.position = *centerFlock;
 
             Graphics.DrawMeshInstanced(
                 Mesh,
@@ -84,7 +102,7 @@ namespace ThousandAnt.Boids {
                 0,
                 null);
 
-            boidsHandle             = new BatchedJob {
+            var batchedJob          = new BatchedJob {
                 NoiseOffsets        = noiseOffsets,
                 Time                = Time.time,
                 DeltaTime           = Time.deltaTime,
@@ -94,6 +112,14 @@ namespace ThousandAnt.Boids {
                 Size                = srcMatrices.Values.Length,
                 Src                 = (float4x4*)(srcMatrices.Ptr),
             }.Schedule(srcMatrices.Values.Length, 32, boidsHandle);
+
+            var centerJob = new AverageCenterJob {
+                Center    = centerFlock,
+                Matrices  = srcMatrices.Ptr,
+                Size      = srcMatrices.Values.Length
+            }.Schedule(boidsHandle);
+
+            boidsHandle = JobHandle.CombineDependencies(centerJob, batchedJob);
         }
     }
 }
