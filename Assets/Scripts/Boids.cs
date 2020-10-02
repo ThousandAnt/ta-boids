@@ -78,7 +78,7 @@ namespace ThousandAnt.Boids {
         public float  DeltaTime;
         public float  MaxDist;
         public float  Speed;
-        public float  RotationCoefficient;
+        public float  RotationSpeed;
         public int    Size;
         public float3 Goal;
 
@@ -123,12 +123,12 @@ namespace ThousandAnt.Boids {
             cohesion      *= avg;
             cohesion       = math.normalizesafe(cohesion - currentPos);
             var direction  = separation + alignment + cohesion + tendency;
-            var rotation   = current.Forward().QuaternionBetween(math.normalize(direction));
+            var rotation   = current.Forward().QuaternionBetween(math.normalizesafe(direction));
 
             var finalRotation = current.Rotation();
 
             if (!rotation.Equals(current.Rotation())) {
-                var t = math.exp(-RotationCoefficient * DeltaTime);
+                var t = math.exp(-RotationSpeed * DeltaTime);
                 finalRotation = math.lerp(rotation.value, finalRotation.value, t);
             }
 

@@ -154,9 +154,9 @@ MonoBehaviour:
   Material: {fileID: 2100000, guid: e23bdf529a405ae4d8965e2fe77e6267, type: 2}
   Mode: 1
   ReceiveShadows: 0
-  SeparationDistance: 5
+  SeparationDistance: 2
   Radius: 75
-  Size: 1023
+  Size: 100
   MaxSpeed: 6
   RotationCoefficient: 4
   AllowDestination: 0

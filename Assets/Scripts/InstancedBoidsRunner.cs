@@ -109,7 +109,7 @@ namespace ThousandAnt.Boids {
                 DeltaTime           = Time.deltaTime,
                 MaxDist             = SeparationDistance,
                 Speed               = MaxSpeed,
-                RotationCoefficient = RotationCoefficient,
+                RotationSpeed = RotationCoefficient,
                 Size                = srcMatrices.Values.Length,
                 Src                 = (float4x4*)(srcMatrices.Ptr),
             }.Schedule(srcMatrices.Values.Length, 32, boidsHandle);

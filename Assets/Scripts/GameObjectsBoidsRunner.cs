@@ -17,7 +17,7 @@ namespace ThousandAnt.Boids {
         public float Radius              = 20;
         public int   Size                = 512;
         public float MaxSpeed            = 2f;
-        public float RotationCoefficient = 4f;
+        public float RotationSpeed = 4f;
 
         [Header("Goal Setting")]
         public bool AllowDestination;
@@ -70,7 +70,7 @@ namespace ThousandAnt.Boids {
                 DeltaTime           = Time.deltaTime,
                 MaxDist             = SeparationDistance,
                 Speed               = MaxSpeed,
-                RotationCoefficient = RotationCoefficient,
+                RotationSpeed       = RotationSpeed,
                 Size                = srcMatrices.Length,
                 Src                 = (float4x4*)(srcMatrices.GetUnsafePtr())
             }.Schedule(transforms.Length, 32, boidsHandle);
