@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 697dcc1a69e1a2c4ea5db483875ede85, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -121,6 +121,57 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &134442818
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 134442820}
+  - component: {fileID: 134442819}
+  m_Layer: 0
+  m_Name: Asteroid Spawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &134442819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 134442818}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6bf088a83f140247b18caacb244384e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  minDistanceToSeparate: 30
+  separationDistance: 50
+  distanceAhead: 75
+  speed: 1
+  asteroidPrefab: {fileID: 2075768285577296091, guid: a67cf71b101feae48aec3d0cfd5e6209,
+    type: 3}
+  runner: {fileID: 1718989230}
+  key: 32
+--- !u!4 &134442820
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 134442818}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 6
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &532041479
 GameObject:
   m_ObjectHideFlags: 0
@@ -150,10 +201,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bf9a446cda2750e40b02fe972865fc0c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Mesh: {fileID: 4300000, guid: b24f1c0f5d889904e841539dde078d79, type: 2}
-  Material: {fileID: 2100000, guid: e23bdf529a405ae4d8965e2fe77e6267, type: 2}
-  Mode: 1
-  ReceiveShadows: 0
   Weights:
     TendencyWeight: 1
     AlignmentWeight: 1
@@ -162,8 +209,12 @@ MonoBehaviour:
   Radius: 75
   Size: 100
   MaxSpeed: 6
-  RotationCoefficient: 4
+  RotationSpeed: 4
   Destination: {fileID: 1231730117}
+  Mesh: {fileID: 4300000, guid: b24f1c0f5d889904e841539dde078d79, type: 2}
+  Material: {fileID: 2100000, guid: e23bdf529a405ae4d8965e2fe77e6267, type: 2}
+  Mode: 1
+  ReceiveShadows: 0
   Wind:
     x: 0
     y: 0
@@ -352,7 +403,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -47.8}
+  m_LocalPosition: {x: 0, y: 0, z: -9.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -481,7 +532,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1295889759}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -47.8}
+  m_LocalPosition: {x: 0, y: 0, z: -9.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1774772250}
@@ -531,9 +582,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db6064c54db4411478c74f824f0fadbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  FlockMember: {fileID: 2930307716884758171, guid: ac04b7fb91b2a1045855d48be63775e2,
-    type: 3}
-  Settings:
+  Weights:
     TendencyWeight: 1
     AlignmentWeight: 1
     NoiseWeight: 1
@@ -543,6 +592,8 @@ MonoBehaviour:
   MaxSpeed: 6
   RotationSpeed: 2
   Destination: {fileID: 1231730117}
+  FlockMember: {fileID: 2930307716884758171, guid: ac04b7fb91b2a1045855d48be63775e2,
+    type: 3}
   Wind:
     x: 0
     y: 0
@@ -593,7 +644,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BindingMode: 1
-  m_FollowOffset: {x: 0, y: 0, z: -47.8}
+  m_FollowOffset: {x: 0, y: 0, z: -9.9}
   m_XDamping: 1
   m_YDamping: 1
   m_ZDamping: 1
