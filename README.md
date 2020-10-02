@@ -16,7 +16,6 @@ Open up the InstancedJobs. Instead of GameObjects, we open up a buffer of N
 matrix elements we want to store and push the data to the `Graphics.DrawMeshInstanced` 
 command.
 
-
-### Jobs Content
+## Jobs Content
 All jobs are found in the `Boids.cs` file. (The jobs do use pointers to interface well 
 with managed data.)
