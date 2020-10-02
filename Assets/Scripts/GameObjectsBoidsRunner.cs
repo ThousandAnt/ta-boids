@@ -9,7 +9,7 @@ using URandom = UnityEngine.Random;
 
 namespace ThousandAnt.Boids {
 
-    public class GameObjectsBoidsRunner : MonoBehaviour {
+    public unsafe class GameObjectsBoidsRunner : MonoBehaviour {
 
         public Transform FlockMember;
 
@@ -31,6 +31,7 @@ namespace ThousandAnt.Boids {
         private Transform[] transforms;
         private TransformAccessArray transformAccessArray;
         private JobHandle boidsHandle;
+        private float3* center;
 
         private void Start() {
             transforms   = new Transform[Size];
@@ -46,6 +47,9 @@ namespace ThousandAnt.Boids {
             }
 
             transformAccessArray = new TransformAccessArray(transforms);
+
+            center = (float3*)UnsafeUtility.Malloc(UnsafeUtility.SizeOf<float3>(), UnsafeUtility.AlignOf<float3>(), Allocator.Persistent);
+            UnsafeUtility.MemSet(center, default, UnsafeUtility.SizeOf<float3>());
         }
 
         private void OnDisable() {
@@ -58,12 +62,26 @@ namespace ThousandAnt.Boids {
             if (noiseOffsets.IsCreated) {
                 noiseOffsets.Dispose();
             }
+
+            if (center != null) {
+                UnsafeUtility.Free(center, Allocator.Persistent);
+                center = null;
+            }
         }
 
         private unsafe void Update() {
             boidsHandle.Complete();
+
+            transform.position = *center;
+
+            boidsHandle  = new AverageCenterJob {
+                Matrices = (Matrix4x4*)srcMatrices.GetUnsafePtr(),
+                Center   = center,
+                Size     = srcMatrices.Length
+            }.Schedule(boidsHandle);
+
             boidsHandle       = new BatchedJob {
-                Settings      = Settings,
+                Weights      = Settings,
                 Goal          = Destination.position,
                 NoiseOffsets  = noiseOffsets,
                 Time          = Time.time,

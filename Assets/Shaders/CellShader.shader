@@ -7,6 +7,8 @@
         _EmissionMap("Emission Texture", 2D) = "white" {}
         [HDR] _EmissionColor("Emission Color", Color) = (1, 1, 1, 1)
 
+        _Alpha("Shadow Alpha", Range(0, 1)) = 1
+
         [HDR] _AmbientColor("Ambient Color", Color) = (0.4, 0.4, 0.4, 1)
         [HDR] _SpecularColor("Specular Color", Color) = (0.4, 0.4, 0.4, 1)
         _Glossiness("Glosiness", Float) = 32
@@ -127,6 +129,53 @@
                     UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Color) * finalColor;
             }
 
+            ENDCG
+        }
+
+        Pass
+        {
+            Tags
+            {
+                "Queue" = "Geometry+1"
+            }
+            Blend SrcAlpha OneMinusSrcAlpha
+
+            CGPROGRAM
+            #pragma multi_compile_fwdbase
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "UnityCG.cginc"
+            #include "AutoLight.cginc"
+
+            struct Attributes
+            {
+                half4 vertex : POSITION;
+            };
+
+            struct Varyings
+            {
+                half4 pos : SV_POSITION;
+                SHADOW_COORDS(0)
+            };
+
+            half _Alpha;
+
+            Varyings vert(Attributes input)
+            {
+                Varyings output;
+                output.pos = UnityObjectToClipPos(input.vertex);
+                TRANSFER_SHADOW(output);
+
+                return output;
+            }
+
+            half4 frag(Varyings input) : SV_TARGET
+            {
+                half shadow = SHADOW_ATTENUATION(input);
+
+                return half4(0, 0, 0, (1 - shadow) * _Alpha);
+            }
             ENDCG
         }
 

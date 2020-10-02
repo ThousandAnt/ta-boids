@@ -143,12 +143,11 @@ namespace ThousandAnt.Boids {
                              cohesion +
                              Weights.TendencyWeight * tendency;
 
-            var rotation      = current.Forward().QuaternionBetween(math.normalizesafe(direction));
-            var finalRotation = current.Rotation();
+            var targetRotation = current.Forward().QuaternionBetween(math.normalizesafe(direction));
+            var finalRotation  = current.Rotation();
 
-            if (!rotation.Equals(current.Rotation())) {
-                var t = math.exp(-RotationSpeed * DeltaTime);
-                finalRotation = math.lerp(rotation.value, finalRotation.value, t);
+            if (!targetRotation.Equals(current.Rotation())) {
+                finalRotation = math.lerp(finalRotation.value, targetRotation.value, RotationSpeed * DeltaTime);
             }
 
             var pNoise = math.abs(noise.cnoise(new float2(Time, NoiseOffsets[index])) * 2f - 1f);

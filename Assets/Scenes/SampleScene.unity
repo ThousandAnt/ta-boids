@@ -137,7 +137,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &532041480
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -154,12 +154,15 @@ MonoBehaviour:
   Material: {fileID: 2100000, guid: e23bdf529a405ae4d8965e2fe77e6267, type: 2}
   Mode: 1
   ReceiveShadows: 0
+  Weights:
+    TendencyWeight: 1
+    AlignmentWeight: 1
+    NoiseWeight: 1
   SeparationDistance: 2
   Radius: 75
   Size: 100
   MaxSpeed: 6
   RotationCoefficient: 4
-  AllowDestination: 0
   Destination: {fileID: 1231730117}
   Wind:
     x: 0
@@ -177,7 +180,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 2
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &705507993
 GameObject:
@@ -208,7 +211,7 @@ Light:
   m_Type: 1
   m_Shape: 0
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1.25
+  m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -416,7 +419,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1295889759
 GameObject:
@@ -453,8 +456,8 @@ MonoBehaviour:
   m_StreamingVersion: 20170927
   m_Priority: 10
   m_StandbyUpdate: 2
-  m_LookAt: {fileID: 532041481}
-  m_Follow: {fileID: 532041481}
+  m_LookAt: {fileID: 1718989230}
+  m_Follow: {fileID: 1718989230}
   m_Lens:
     FieldOfView: 60
     OrthographicSize: 10
@@ -501,7 +504,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1718989230
 Transform:
   m_ObjectHideFlags: 0
@@ -514,7 +517,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1718989231
 MonoBehaviour:
@@ -528,15 +531,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db6064c54db4411478c74f824f0fadbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  FlockMember: {fileID: 4466358772150865389, guid: 51d63c359388129418e08c357427ade7,
+  FlockMember: {fileID: 2930307716884758171, guid: ac04b7fb91b2a1045855d48be63775e2,
     type: 3}
+  Settings:
+    TendencyWeight: 1
+    AlignmentWeight: 1
+    NoiseWeight: 1
   SeparationDistance: 3
   Radius: 10
   Size: 100
   MaxSpeed: 6
-  RotationCoefficient: 4
-  AllowDestination: 0
-  Destination: {fileID: 0}
+  RotationSpeed: 2
+  Destination: {fileID: 1231730117}
   Wind:
     x: 0
     y: 0

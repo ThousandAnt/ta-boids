@@ -44,11 +44,11 @@ namespace ThousandAnt.Boids {
         [Header("Tendency")]
         public float3 Wind;
 
-        private PinnedMatrixArray srcMatrices;
-        private JobHandle boidsHandle;
         private MaterialPropertyBlock tempBlock;
+        private PinnedMatrixArray srcMatrices;
         private NativeArray<float> noiseOffsets;
         private float3* centerFlock;
+        private JobHandle boidsHandle;
 
         private void Start() {
             tempBlock    = new MaterialPropertyBlock();
