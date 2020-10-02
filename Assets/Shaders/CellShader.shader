@@ -14,8 +14,6 @@
         [HDR] _RimColor("Rim Color", Color) = (0.9, 0.9, 0.9, 1)
         _RimStrength("Rim Strength", Range(0, 1)) = 0.7
         _RimThreshold("Rim Threshold", Range(0, 1)) = 0.1
-
-        _FlipAxis("Flip Axis", Vector) = (1, 1, 1, 1)
     }
 
     SubShader
@@ -68,8 +66,6 @@
             sampler2D _EmissionMap;
             half4 _EmissionMap_ST;
 
-            half4 _FlipAxis;
-
             UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
                 UNITY_DEFINE_INSTANCED_PROP(half4, _Color)
                 UNITY_DEFINE_INSTANCED_PROP(half4, _AmbientColor)
@@ -86,7 +82,7 @@
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input);
 
-                output.pos     = UnityObjectToClipPos(input.vertex * _FlipAxis);
+                output.pos     = UnityObjectToClipPos(input.vertex);
                 output.normal  = UnityObjectToWorldNormal(input.normal);
                 output.viewDir = WorldSpaceViewDir(input.vertex);
                 output.uv      = TRANSFORM_TEX(input.uv, _BaseMap);
