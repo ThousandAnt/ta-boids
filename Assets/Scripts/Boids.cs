@@ -9,6 +9,21 @@ using UnityEngine.Jobs;
 
 namespace ThousandAnt.Boids {
 
+    [System.Serializable]
+    public struct BoidWeights {
+        public float TendencyWeight;
+        public float AlignmentWeight;
+        public float NoiseWeight;
+
+        public static BoidWeights Default() {
+            return new BoidWeights {
+                TendencyWeight   = 1,
+                AlignmentWeight  = 1,
+                NoiseWeight      = 1
+            };
+        }
+    }
+
     public static class TransformExtensions {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -74,13 +89,14 @@ namespace ThousandAnt.Boids {
     [BurstCompile]
     public unsafe struct BatchedJob : IJobParallelFor {
 
-        public float  Time;
-        public float  DeltaTime;
-        public float  MaxDist;
-        public float  Speed;
-        public float  RotationSpeed;
-        public int    Size;
-        public float3 Goal;
+        public BoidWeights   Weights;
+        public float         Time;
+        public float         DeltaTime;
+        public float         MaxDist;
+        public float         Speed;
+        public float         RotationSpeed;
+        public int           Size;
+        public float3        Goal;
 
         [ReadOnly]
         public NativeArray<float> NoiseOffsets;
@@ -97,7 +113,7 @@ namespace ThousandAnt.Boids {
             var separation = float3.zero;
             var alignment  = float3.zero;
             var cohesion   = float3.zero;
-            var tendency   = math.normalizesafe(Goal - currentPos);
+            var tendency   = math.normalizesafe(Goal - currentPos) * Weights.TendencyWeight;
 
             for (int i = 0; i < Size; i++) {
                 if (i == index) {
@@ -122,9 +138,12 @@ namespace ThousandAnt.Boids {
             alignment     *= avg;
             cohesion      *= avg;
             cohesion       = math.normalizesafe(cohesion - currentPos);
-            var direction  = separation + alignment + cohesion + tendency;
-            var rotation   = current.Forward().QuaternionBetween(math.normalizesafe(direction));
+            var direction  = separation +
+                             Weights.AlignmentWeight * alignment +
+                             cohesion +
+                             Weights.TendencyWeight * tendency;
 
+            var rotation      = current.Forward().QuaternionBetween(math.normalizesafe(direction));
             var finalRotation = current.Rotation();
 
             if (!rotation.Equals(current.Rotation())) {
@@ -133,7 +152,7 @@ namespace ThousandAnt.Boids {
             }
 
             var pNoise = math.abs(noise.cnoise(new float2(Time, NoiseOffsets[index])) * 2f - 1f);
-            var speedNoise = Speed * (1f + pNoise * 0.9f);
+            var speedNoise = Speed * (1f + pNoise * Weights.NoiseWeight * 0.9f);
             var finalPosition = currentPos + current.Forward() * speedNoise * DeltaTime;
 
             Src[index] = float4x4.TRS(finalPosition, finalRotation, new float3(1));

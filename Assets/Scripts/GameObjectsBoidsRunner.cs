@@ -13,26 +13,24 @@ namespace ThousandAnt.Boids {
 
         public Transform FlockMember;
 
+        public BoidWeights Settings    = BoidWeights.Default();
         public float SeparationDistance  = 10f;
         public float Radius              = 20;
         public int   Size                = 512;
         public float MaxSpeed            = 2f;
-        public float RotationSpeed = 4f;
+        public float RotationSpeed       = 4f;
 
         [Header("Goal Setting")]
-        public bool AllowDestination;
         public Transform Destination;
 
         [Header("Tendency")]
         public float3 Wind;
 
+        private NativeArray<float> noiseOffsets;
         private NativeArray<float4x4> srcMatrices;
         private Transform[] transforms;
         private TransformAccessArray transformAccessArray;
-
         private JobHandle boidsHandle;
-
-        private NativeArray<float> noiseOffsets;
 
         private void Start() {
             transforms   = new Transform[Size];
@@ -64,15 +62,17 @@ namespace ThousandAnt.Boids {
 
         private unsafe void Update() {
             boidsHandle.Complete();
-            boidsHandle             = new BatchedJob {
-                NoiseOffsets        = noiseOffsets,
-                Time                = Time.time,
-                DeltaTime           = Time.deltaTime,
-                MaxDist             = SeparationDistance,
-                Speed               = MaxSpeed,
-                RotationSpeed       = RotationSpeed,
-                Size                = srcMatrices.Length,
-                Src                 = (float4x4*)(srcMatrices.GetUnsafePtr())
+            boidsHandle       = new BatchedJob {
+                Settings      = Settings,
+                Goal          = Destination.position,
+                NoiseOffsets  = noiseOffsets,
+                Time          = Time.time,
+                DeltaTime     = Time.deltaTime,
+                MaxDist       = SeparationDistance,
+                Speed         = MaxSpeed,
+                RotationSpeed = RotationSpeed,
+                Size          = srcMatrices.Length,
+                Src           = (float4x4*)(srcMatrices.GetUnsafePtr())
             }.Schedule(transforms.Length, 32, boidsHandle);
 
             boidsHandle = new CopyTransformJob {

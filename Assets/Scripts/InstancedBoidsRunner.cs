@@ -31,6 +31,7 @@ namespace ThousandAnt.Boids {
         public ShadowCastingMode Mode;
         public bool              ReceiveShadows;
 
+        public BoidWeights Weights       = BoidWeights.Default();
         public float SeparationDistance  = 10f;
         public float Radius              = 20;
         public int   Size                = 512;
@@ -38,7 +39,6 @@ namespace ThousandAnt.Boids {
         public float RotationCoefficient = 4f;
 
         [Header("Goal Setting")]
-        public bool AllowDestination;
         public Transform Destination;
 
         [Header("Tendency")]
@@ -51,8 +51,8 @@ namespace ThousandAnt.Boids {
         private float3* centerFlock;
 
         private void Start() {
-            tempBlock = new MaterialPropertyBlock();
-            srcMatrices = new PinnedMatrixArray(Size);
+            tempBlock    = new MaterialPropertyBlock();
+            srcMatrices  = new PinnedMatrixArray(Size);
             noiseOffsets = new NativeArray<float>(Size, Allocator.Persistent);
 
             for (int i = 0; i < Size; i++) {
@@ -102,16 +102,16 @@ namespace ThousandAnt.Boids {
                 0,
                 null);
 
-            var batchedJob          = new BatchedJob {
-                Goal                = Destination.position,
-                NoiseOffsets        = noiseOffsets,
-                Time                = Time.time,
-                DeltaTime           = Time.deltaTime,
-                MaxDist             = SeparationDistance,
-                Speed               = MaxSpeed,
+            var batchedJob    = new BatchedJob {
+                Goal          = Destination.position,
+                NoiseOffsets  = noiseOffsets,
+                Time          = Time.time,
+                DeltaTime     = Time.deltaTime,
+                MaxDist       = SeparationDistance,
+                Speed         = MaxSpeed,
                 RotationSpeed = RotationCoefficient,
-                Size                = srcMatrices.Values.Length,
-                Src                 = (float4x4*)(srcMatrices.Ptr),
+                Size          = srcMatrices.Values.Length,
+                Src           = (float4x4*)(srcMatrices.Ptr),
             }.Schedule(srcMatrices.Values.Length, 32, boidsHandle);
 
             var centerJob = new AverageCenterJob {
