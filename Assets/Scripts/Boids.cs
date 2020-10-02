@@ -93,6 +93,7 @@ namespace ThousandAnt.Boids {
             var currentPos    = current.Position();
             var perceivedSize = Size - 1;
 
+            // TODO: Add weights
             var separation = float3.zero;
             var alignment  = float3.zero;
             var cohesion   = float3.zero;
@@ -128,7 +129,7 @@ namespace ThousandAnt.Boids {
 
             if (!rotation.Equals(current.Rotation())) {
                 var t = math.exp(-RotationCoefficient * DeltaTime);
-                finalRotation = Quaternion.Lerp(rotation, finalRotation, t);
+                finalRotation = math.lerp(rotation.value, finalRotation.value, t);
             }
 
             var pNoise = math.abs(noise.cnoise(new float2(Time, NoiseOffsets[index])) * 2f - 1f);
