@@ -103,6 +103,7 @@ namespace ThousandAnt.Boids {
                 null);
 
             var batchedJob          = new BatchedJob {
+                Goal                = Destination.position,
                 NoiseOffsets        = noiseOffsets,
                 Time                = Time.time,
                 DeltaTime           = Time.deltaTime,

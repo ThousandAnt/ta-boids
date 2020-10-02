@@ -160,7 +160,7 @@ MonoBehaviour:
   MaxSpeed: 6
   RotationCoefficient: 4
   AllowDestination: 0
-  Destination: {fileID: 0}
+  Destination: {fileID: 1231730117}
   Wind:
     x: 0
     y: 0
@@ -349,7 +349,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -61.4}
+  m_LocalPosition: {x: 0, y: 0, z: -47.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -412,7 +412,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1231730116}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 16.37, y: 0, z: 363.9}
+  m_LocalPosition: {x: 0, y: 0, z: 119.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -478,7 +478,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1295889759}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -61.4}
+  m_LocalPosition: {x: 0, y: 0, z: -47.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1774772250}
@@ -587,7 +587,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BindingMode: 1
-  m_FollowOffset: {x: 0, y: 0, z: -61.4}
+  m_FollowOffset: {x: 0, y: 0, z: -47.8}
   m_XDamping: 1
   m_YDamping: 1
   m_ZDamping: 1

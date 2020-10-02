@@ -74,12 +74,13 @@ namespace ThousandAnt.Boids {
     [BurstCompile]
     public unsafe struct BatchedJob : IJobParallelFor {
 
-        public float Time;
-        public float DeltaTime;
-        public float MaxDist;
-        public float Speed;
-        public float RotationCoefficient;
-        public int   Size;
+        public float  Time;
+        public float  DeltaTime;
+        public float  MaxDist;
+        public float  Speed;
+        public float  RotationCoefficient;
+        public int    Size;
+        public float3 Goal;
 
         [ReadOnly]
         public NativeArray<float> NoiseOffsets;
@@ -95,6 +96,7 @@ namespace ThousandAnt.Boids {
             var separation = float3.zero;
             var alignment  = float3.zero;
             var cohesion   = float3.zero;
+            var tendency   = math.normalizesafe(Goal - currentPos);
 
             for (int i = 0; i < Size; i++) {
                 if (i == index) {
@@ -119,7 +121,7 @@ namespace ThousandAnt.Boids {
             alignment     *= avg;
             cohesion      *= avg;
             cohesion       = math.normalizesafe(cohesion - currentPos);
-            var direction  = separation + alignment + cohesion;
+            var direction  = separation + alignment + cohesion + tendency;
             var rotation   = current.Forward().QuaternionBetween(math.normalize(direction));
 
             var finalRotation = current.Rotation();
