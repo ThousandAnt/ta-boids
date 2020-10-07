@@ -36,6 +36,7 @@ namespace ThousandAnt.Boids {
         private MaterialPropertyBlock tempBlock;
         private PinnedMatrixArray srcMatrices;
         private NativeArray<float> noiseOffsets;
+        private NativeArray<float4x4> dblBuffer;
         private float3* centerFlock;
         private JobHandle boidsHandle;
         private Vector4[] colors;
@@ -44,13 +45,14 @@ namespace ThousandAnt.Boids {
             tempBlock    = new MaterialPropertyBlock();
             srcMatrices  = new PinnedMatrixArray(Size);
             noiseOffsets = new NativeArray<float>(Size, Allocator.Persistent);
+            dblBuffer    = new NativeArray<float4x4>(Size, Allocator.Persistent);
             colors       = new Vector4[Size];
 
             for (int i = 0; i < Size; i++) {
-                var pos               = transform.position + URandom.insideUnitSphere * Radius;
-                var rotation          = Quaternion.Slerp(transform.rotation, URandom.rotation, 0.3f);
-                srcMatrices.Values[i] = float4x4.TRS(pos, rotation, Vector3.one);
-                noiseOffsets[i]       = URandom.value * 10f;
+                var pos         = transform.position + URandom.insideUnitSphere * Radius;
+                var rotation    = Quaternion.Slerp(transform.rotation, URandom.rotation, 0.3f);
+                dblBuffer[i]    = float4x4.TRS(pos, rotation, Vector3.one);
+                noiseOffsets[i] = URandom.value * 10f;
 
                 colors[i] = new Color(
                     URandom.Range(Initial.r, Final.r),
@@ -74,6 +76,10 @@ namespace ThousandAnt.Boids {
 
             if (noiseOffsets.IsCreated) {
                 noiseOffsets.Dispose();
+            }
+
+            if (dblBuffer.IsCreated) {
+                dblBuffer.Dispose();
             }
 
             // Free this memory
@@ -111,16 +117,22 @@ namespace ThousandAnt.Boids {
                 Speed         = MaxSpeed,
                 RotationSpeed = RotationSpeed,
                 Size          = srcMatrices.Values.Length,
-                Src           = (float4x4*)(srcMatrices.Ptr),
-            }.Schedule(srcMatrices.Values.Length, 32, boidsHandle);
+                Dst           = (float4x4*)(srcMatrices.Ptr),
+                Src           = dblBuffer
+            }.Schedule(srcMatrices.Values.Length, 32);
 
-            var centerJob = new AverageCenterJob {
+            var avgCenterJob = new AverageCenterJob {
                 Center    = centerFlock,
-                Matrices  = srcMatrices.Ptr,
+                Matrices  = dblBuffer,
                 Size      = srcMatrices.Values.Length
-            }.Schedule(boidsHandle);
+            }.Schedule();
 
-            boidsHandle = JobHandle.CombineDependencies(centerJob, batchedJob);
+            boidsHandle = JobHandle.CombineDependencies(batchedJob, avgCenterJob);
+
+            boidsHandle = new CopyMatrixJob {
+                Dst = dblBuffer,
+                Src = srcMatrices.Ptr
+            }.Schedule(srcMatrices.Values.Length, 32, boidsHandle);
         }
     }
 }

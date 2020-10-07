@@ -15,6 +15,7 @@ namespace ThousandAnt.Boids {
 
         private NativeArray<float> noiseOffsets;
         private NativeArray<float4x4> srcMatrices;
+        private NativeArray<Matrix4x4> dstMatrices;
         private Transform[] transforms;
         private TransformAccessArray transformAccessArray;
         private JobHandle boidsHandle;
@@ -23,6 +24,7 @@ namespace ThousandAnt.Boids {
         private void Start() {
             transforms   = new Transform[Size];
             srcMatrices  = new NativeArray<float4x4>(transforms.Length, Allocator.Persistent);
+            dstMatrices  = new NativeArray<Matrix4x4>(transforms.Length, Allocator.Persistent);
             noiseOffsets = new NativeArray<float>(transforms.Length, Allocator.Persistent);
 
             for (int i = 0; i < Size; i++) {
@@ -46,6 +48,10 @@ namespace ThousandAnt.Boids {
                 srcMatrices.Dispose();
             }
 
+            if (dstMatrices.IsCreated) {
+                dstMatrices.Dispose();
+            }
+
             if (noiseOffsets.IsCreated) {
                 noiseOffsets.Dispose();
             }
@@ -61,13 +67,17 @@ namespace ThousandAnt.Boids {
 
             transform.position = *center;
 
-            boidsHandle  = new AverageCenterJob {
-                Matrices = (Matrix4x4*)srcMatrices.GetUnsafePtr(),
+            var copyTransformJob = new CopyTransformJob {
+                Src = srcMatrices
+            }.Schedule(transformAccessArray);
+
+            var avgCenterJob = new AverageCenterJob {
+                Matrices = srcMatrices,
                 Center   = center,
                 Size     = srcMatrices.Length
-            }.Schedule(boidsHandle);
+            }.Schedule();
 
-            boidsHandle       = new BatchedJob {
+            var batchedJob    = new BatchedJob {
                 Weights       = Weights,
                 Goal          = Destination.position,
                 NoiseOffsets  = noiseOffsets,
@@ -77,12 +87,16 @@ namespace ThousandAnt.Boids {
                 Speed         = MaxSpeed,
                 RotationSpeed = RotationSpeed,
                 Size          = srcMatrices.Length,
-                Src           = (float4x4*)(srcMatrices.GetUnsafePtr())
-            }.Schedule(transforms.Length, 32, boidsHandle);
+                Src           = srcMatrices,
+                Dst           = (float4x4*)dstMatrices.GetUnsafePtr()
+            }.Schedule(transforms.Length, 32);
 
-            boidsHandle = new CopyTransformJob {
-                Src = srcMatrices
-            }.Schedule(transformAccessArray, boidsHandle);
+            var combinedJob = JobHandle.CombineDependencies(avgCenterJob, batchedJob, copyTransformJob);
+
+            boidsHandle = new CopyMatrixJob {
+                Dst = srcMatrices,
+                Src = (Matrix4x4*)dstMatrices.GetUnsafePtr()
+            }.Schedule(srcMatrices.Length, 32, combinedJob);
         }
     }
 }

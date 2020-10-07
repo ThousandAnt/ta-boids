@@ -64,7 +64,7 @@ namespace ThousandAnt.Boids {
         public void Execute(int index, TransformAccess transform) {
             var m = Src[index];
 
-            transform.localPosition = m.c3.xyz;
+            transform.localPosition = m.Position();
             transform.rotation      = new quaternion(m);
         }
     }
@@ -72,8 +72,8 @@ namespace ThousandAnt.Boids {
     [BurstCompile]
     public unsafe struct AverageCenterJob : IJob {
 
-        [NativeDisableUnsafePtrRestriction]
-        public Matrix4x4* Matrices;
+        [ReadOnly]
+        public NativeArray<float4x4> Matrices;
 
         [NativeDisableUnsafePtrRestriction]
         public float3* Center;
@@ -92,6 +92,20 @@ namespace ThousandAnt.Boids {
     }
 
     [BurstCompile]
+    public unsafe struct CopyMatrixJob : IJobParallelFor {
+
+        [WriteOnly]
+        public NativeArray<float4x4> Dst;
+
+        [NativeDisableUnsafePtrRestriction]
+        public Matrix4x4* Src;
+
+        public void Execute(int index) {
+            Dst[index] = Src[index];
+        }
+    }
+
+    [BurstCompile]
     public unsafe struct BatchedJob : IJobParallelFor {
 
         public BoidWeights   Weights;
@@ -106,8 +120,11 @@ namespace ThousandAnt.Boids {
         [ReadOnly]
         public NativeArray<float> NoiseOffsets;
 
+        [ReadOnly]
+        public NativeArray<float4x4> Src;
+
         [NativeDisableUnsafePtrRestriction]
-        public float4x4* Src;
+        public float4x4* Dst;
 
         public void Execute(int index) {
             var current       = Src[index];
@@ -125,7 +142,7 @@ namespace ThousandAnt.Boids {
                     continue;
                 }
 
-                var b = Src[i];
+                var b = Dst[i];
                 var other = b.Position();
 
                 // Perform separation
@@ -159,7 +176,7 @@ namespace ThousandAnt.Boids {
             var speedNoise = Speed * (1f + pNoise * Weights.NoiseWeight * 0.9f);
             var finalPosition = currentPos + current.Forward() * speedNoise * DeltaTime;
 
-            Src[index] = float4x4.TRS(finalPosition, finalRotation, new float3(1));
+            Dst[index] = float4x4.TRS(finalPosition, finalRotation, new float3(1));
         }
 
         float3 SeparationVector(in float3 current, in float3 other) {
