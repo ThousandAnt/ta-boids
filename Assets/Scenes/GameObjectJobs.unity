@@ -679,6 +679,7 @@ MonoBehaviour:
   Destination: {fileID: 1231730117}
   FlockMember: {fileID: 2930307716884758171, guid: ac04b7fb91b2a1045855d48be63775e2,
     type: 3}
+  UseSingleThread: 1
 --- !u!1 &1774772249
 GameObject:
   m_ObjectHideFlags: 3

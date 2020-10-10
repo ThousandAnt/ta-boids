@@ -12,6 +12,7 @@ namespace ThousandAnt.Boids {
     public unsafe class GameObjectsBoidsRunner : Runner {
 
         public Transform FlockMember;
+        public bool UseSingleThread;
 
         private NativeArray<float> noiseOffsets;
         private NativeArray<float4x4> srcMatrices;
@@ -77,21 +78,39 @@ namespace ThousandAnt.Boids {
                 Size     = srcMatrices.Length
             }.Schedule();
 
-            var batchedJob    = new BatchedJob {
-                Weights       = Weights,
-                Goal          = Destination.position,
-                NoiseOffsets  = noiseOffsets,
-                Time          = Time.time,
-                DeltaTime     = Time.deltaTime,
-                MaxDist       = SeparationDistance,
-                Speed         = MaxSpeed,
-                RotationSpeed = RotationSpeed,
-                Size          = srcMatrices.Length,
-                Src           = srcMatrices,
-                Dst           = (float4x4*)dstMatrices.GetUnsafePtr()
-            }.Schedule(transforms.Length, 32);
+            JobHandle boidJob;
+    
+            if (!UseSingleThread) {
+                boidJob           = new BatchedJob {
+                    Weights       = Weights,
+                    Goal          = Destination.position,
+                    NoiseOffsets  = noiseOffsets,
+                    Time          = Time.time,
+                    DeltaTime     = Time.deltaTime,
+                    MaxDist       = SeparationDistance,
+                    Speed         = MaxSpeed,
+                    RotationSpeed = RotationSpeed,
+                    Size          = srcMatrices.Length,
+                    Src           = srcMatrices,
+                    Dst           = (float4x4*)dstMatrices.GetUnsafePtr()
+                }.Schedule(transforms.Length, 32);
+            } else {
+                boidJob = new SingleThreadJob {
+                    Weights       = Weights,
+                    Goal          = Destination.position,
+                    NoiseOffsets  = noiseOffsets,
+                    Time          = Time.time,
+                    DeltaTime     = Time.deltaTime,
+                    MaxDist       = SeparationDistance,
+                    Speed         = MaxSpeed,
+                    RotationSpeed = RotationSpeed,
+                    Size          = srcMatrices.Length,
+                    Src           = srcMatrices,
+                    Dst           = (float4x4*)dstMatrices.GetUnsafePtr()
+                }.Schedule();
+            }
 
-            var combinedJob = JobHandle.CombineDependencies(avgCenterJob, batchedJob, copyTransformJob);
+            var combinedJob = JobHandle.CombineDependencies(avgCenterJob, boidJob, copyTransformJob);
 
             boidsHandle = new CopyMatrixJob {
                 Dst = srcMatrices,
