@@ -106,8 +106,8 @@ namespace ThousandAnt.Boids {
         [WriteOnly]
         public NativeArray<float4x4> Dst;
 
-        [NativeDisableUnsafePtrRestriction]
-        public Matrix4x4* Src;
+        [ReadOnly]
+        public NativeArray<float4x4> Src;
 
         public void Execute(int index) {
             Dst[index] = Src[index];
@@ -132,8 +132,8 @@ namespace ThousandAnt.Boids {
         [ReadOnly]
         public NativeArray<float4x4> Src;
 
-        [NativeDisableUnsafePtrRestriction]
-        public float4x4* Dst;
+        [WriteOnly]
+        public NativeArray<float4x4> Dst;
 
         public void Execute() {
             for (int m = 0; m < Size; m++) {
@@ -151,7 +151,7 @@ namespace ThousandAnt.Boids {
                         continue;
                     }
 
-                    var b = Dst[i];
+                    var b = Src[i];
                     var other = b.Position();
 
                     // Perform separation
@@ -226,7 +226,7 @@ namespace ThousandAnt.Boids {
                     continue;
                 }
 
-                var b = Dst[i];
+                var b = Src[i];
                 var other = b.Position();
 
                 // Perform separation

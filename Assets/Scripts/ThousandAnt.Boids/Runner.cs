@@ -1,6 +1,7 @@
 using UnityEngine;
 
 namespace ThousandAnt.Boids {
+
     public abstract class Runner : MonoBehaviour {
 
         public BoidWeights Weights       = BoidWeights.Default();
