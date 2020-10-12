@@ -53,6 +53,15 @@ namespace ThousandAnt.Boids {
             var w = math.sqrt(math.lengthsq(from) * math.lengthsq(to)) + math.dot(from, to);
             return new quaternion(new float4(cross, w));
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 SeparationVector(float3 current, float3 other, float maxDist) {
+            var diff   = current - other;
+            var mag    = math.length(diff);
+            var scalar = math.clamp(1 - mag / maxDist, 0, 1);
+
+            return diff * (scalar / mag);
+        }
     }
 
     [BurstCompile]
@@ -106,7 +115,7 @@ namespace ThousandAnt.Boids {
     }
 
     [BurstCompile]
-    public unsafe struct SingleThreadJob : IJob {
+    public unsafe struct BoidJob : IJob {
 
         public BoidWeights Weights;
         public float       Time;
@@ -132,7 +141,6 @@ namespace ThousandAnt.Boids {
                 var currentPos    = current.Position();
                 var perceivedSize = Size - 1;
 
-                // TODO: Add weights
                 var separation = float3.zero;
                 var alignment  = float3.zero;
                 var cohesion   = float3.zero;
@@ -147,7 +155,7 @@ namespace ThousandAnt.Boids {
                     var other = b.Position();
 
                     // Perform separation
-                    separation += SeparationVector(currentPos, other);
+                    separation += TransformExtensions.SeparationVector(currentPos, other, MaxDist);
 
                     // Perform alignment
                     alignment  += b.Forward();
@@ -180,27 +188,19 @@ namespace ThousandAnt.Boids {
                 Dst[m] = float4x4.TRS(finalPosition, finalRotation, new float3(1));
             }
         }
-
-        float3 SeparationVector(in float3 current, in float3 other) {
-            var diff   = current - other;
-            var mag    = math.length(diff);
-            var scalar = math.clamp(1 - mag / MaxDist, 0, 1);
-
-            return diff * (scalar / mag);
-        }
     }
 
     [BurstCompile]
-    public unsafe struct BatchedJob : IJobParallelFor {
+    public unsafe struct BatchedBoidJob : IJobParallelFor {
 
-        public BoidWeights   Weights;
-        public float         Time;
-        public float         DeltaTime;
-        public float         MaxDist;
-        public float         Speed;
-        public float         RotationSpeed;
-        public int           Size;
-        public float3        Goal;
+        public BoidWeights Weights;
+        public float       Time;
+        public float       DeltaTime;
+        public float       MaxDist;
+        public float       Speed;
+        public float       RotationSpeed;
+        public int         Size;
+        public float3      Goal;
 
         [ReadOnly]
         public NativeArray<float> NoiseOffsets;
@@ -208,15 +208,14 @@ namespace ThousandAnt.Boids {
         [ReadOnly]
         public NativeArray<float4x4> Src;
 
-        [NativeDisableUnsafePtrRestriction]
-        public float4x4* Dst;
+        [WriteOnly]
+        public NativeArray<float4x4> Dst;
 
         public void Execute(int index) {
             var current       = Src[index];
             var currentPos    = current.Position();
             var perceivedSize = Size - 1;
 
-            // TODO: Add weights
             var separation = float3.zero;
             var alignment  = float3.zero;
             var cohesion   = float3.zero;
@@ -231,7 +230,7 @@ namespace ThousandAnt.Boids {
                 var other = b.Position();
 
                 // Perform separation
-                separation += SeparationVector(currentPos, other);
+                separation += TransformExtensions.SeparationVector(currentPos, other, MaxDist);
 
                 // Perform alignment
                 alignment  += b.Forward();
@@ -262,14 +261,6 @@ namespace ThousandAnt.Boids {
             var finalPosition = currentPos + current.Forward() * speedNoise * DeltaTime;
 
             Dst[index] = float4x4.TRS(finalPosition, finalRotation, new float3(1));
-        }
-
-        float3 SeparationVector(in float3 current, in float3 other) {
-            var diff   = current - other;
-            var mag    = math.length(diff);
-            var scalar = math.clamp(1 - mag / MaxDist, 0, 1);
-
-            return diff * (scalar / mag);
         }
     }
 }

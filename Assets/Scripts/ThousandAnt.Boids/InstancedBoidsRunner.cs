@@ -90,6 +90,8 @@ namespace ThousandAnt.Boids {
         }
 
         private unsafe void Update() {
+            Debug.LogError("InstancedBoidsRunner is not implemented!");
+            /*
             boidsHandle.Complete();
 
             // Set up the transform so that we have cinemachine to look at
@@ -117,7 +119,7 @@ namespace ThousandAnt.Boids {
                 Speed         = MaxSpeed,
                 RotationSpeed = RotationSpeed,
                 Size          = srcMatrices.Values.Length,
-                Dst           = (float4x4*)(srcMatrices.Ptr),
+                // Dst           = (float4x4*)(srcMatrices.Ptr),
                 Src           = dblBuffer
             }.Schedule(srcMatrices.Values.Length, 32);
 
@@ -133,6 +135,7 @@ namespace ThousandAnt.Boids {
                 Dst = dblBuffer,
                 Src = srcMatrices.Ptr
             }.Schedule(srcMatrices.Values.Length, 32, boidsHandle);
+            */
         }
     }
 }

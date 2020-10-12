@@ -4,7 +4,6 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Jobs;
-
 using URandom = UnityEngine.Random;
 
 namespace ThousandAnt.Boids {
@@ -16,7 +15,7 @@ namespace ThousandAnt.Boids {
 
         private NativeArray<float> noiseOffsets;
         private NativeArray<float4x4> srcMatrices;
-        private NativeArray<Matrix4x4> dstMatrices;
+        private NativeArray<float4x4> dstMatrices;
         private Transform[] transforms;
         private TransformAccessArray transformAccessArray;
         private JobHandle boidsHandle;
@@ -25,7 +24,7 @@ namespace ThousandAnt.Boids {
         private void Start() {
             transforms   = new Transform[Size];
             srcMatrices  = new NativeArray<float4x4>(transforms.Length, Allocator.Persistent);
-            dstMatrices  = new NativeArray<Matrix4x4>(transforms.Length, Allocator.Persistent);
+            dstMatrices  = new NativeArray<float4x4>(transforms.Length, Allocator.Persistent);
             noiseOffsets = new NativeArray<float>(transforms.Length, Allocator.Persistent);
 
             for (int i = 0; i < Size; i++) {
@@ -81,7 +80,7 @@ namespace ThousandAnt.Boids {
             JobHandle boidJob;
     
             if (!UseSingleThread) {
-                boidJob           = new BatchedJob {
+                boidJob           = new BatchedBoidJob {
                     Weights       = Weights,
                     Goal          = Destination.position,
                     NoiseOffsets  = noiseOffsets,
@@ -92,10 +91,10 @@ namespace ThousandAnt.Boids {
                     RotationSpeed = RotationSpeed,
                     Size          = srcMatrices.Length,
                     Src           = srcMatrices,
-                    Dst           = (float4x4*)dstMatrices.GetUnsafePtr()
+                    Dst           = dstMatrices
                 }.Schedule(transforms.Length, 32);
             } else {
-                boidJob = new SingleThreadJob {
+                boidJob = new BoidJob {
                     Weights       = Weights,
                     Goal          = Destination.position,
                     NoiseOffsets  = noiseOffsets,
