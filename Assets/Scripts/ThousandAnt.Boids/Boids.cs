@@ -101,7 +101,7 @@ namespace ThousandAnt.Boids {
     }
 
     [BurstCompile]
-    public unsafe struct CopyMatrixJob : IJobParallelFor {
+    public struct CopyMatrixJob : IJobParallelFor {
 
         [WriteOnly]
         public NativeArray<float4x4> Dst;
@@ -115,7 +115,7 @@ namespace ThousandAnt.Boids {
     }
 
     [BurstCompile]
-    public unsafe struct BoidJob : IJob {
+    public struct BoidJob : IJob {
 
         public BoidWeights Weights;
         public float       Time;

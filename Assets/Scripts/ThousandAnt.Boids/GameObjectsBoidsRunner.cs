@@ -69,13 +69,13 @@ namespace ThousandAnt.Boids {
 
             var copyTransformJob = new CopyTransformJob {
                 Src = srcMatrices
-            }.Schedule(transformAccessArray, boidsHandle);
+            }.Schedule(transformAccessArray);
 
             var avgCenterJob = new AverageCenterJob {
                 Matrices = srcMatrices,
                 Center   = center,
                 Size     = srcMatrices.Length
-            }.Schedule(boidsHandle);
+            }.Schedule();
 
             JobHandle boidJob;
     
@@ -92,7 +92,7 @@ namespace ThousandAnt.Boids {
                     Size          = srcMatrices.Length,
                     Src           = srcMatrices,
                     Dst           = dstMatrices
-                }.Schedule(transforms.Length, 32, boidsHandle);
+                }.Schedule(transforms.Length, 32);
             } else {
                 boidJob = new BoidJob {
                     Weights       = Weights,
@@ -108,7 +108,6 @@ namespace ThousandAnt.Boids {
                     Dst           = dstMatrices
                 }.Schedule();
             }
-
 
             var combinedJob = JobHandle.CombineDependencies(avgCenterJob, boidJob, copyTransformJob);
 
