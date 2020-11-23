@@ -635,7 +635,7 @@ GameObject:
   - component: {fileID: 1718989230}
   - component: {fileID: 1718989231}
   m_Layer: 0
-  m_Name: GameObjectBoidsRunner
+  m_Name: BoidsRunner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

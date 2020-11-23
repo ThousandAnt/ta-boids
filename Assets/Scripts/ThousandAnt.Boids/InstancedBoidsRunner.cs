@@ -1,3 +1,5 @@
+using System;
+using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -10,28 +12,45 @@ using URandom = UnityEngine.Random;
 
 namespace ThousandAnt.Boids {
 
-    internal unsafe class PinnedMatrixArray {
+    internal unsafe class PinnedMatrixArray : IDisposable {
 
         internal Matrix4x4[] Src;   // Our source buffer for reading
         internal Matrix4x4[] Dst;   // Our double buffer for writing
 
+        // Using pinned pointers
         internal float4x4* SrcPtr;
         internal float4x4* DstPtr;
 
         internal int Size { get; private set; }
 
+        GCHandle srcHandle;
+        GCHandle dstHandle;
+
         internal PinnedMatrixArray(int size) {
             Src = new Matrix4x4[size];
+            GCHandle.Alloc(Src, GCHandleType.Pinned);
             fixed (Matrix4x4* ptr = Src) {
                 SrcPtr = (float4x4*)ptr;
             }
 
             Dst = new Matrix4x4[size];
+            GCHandle.Alloc(Dst, GCHandleType.Pinned);
+
             fixed (Matrix4x4* ptr = Dst) {
                 DstPtr = (float4x4*)ptr;
             }
 
             Size = size;
+        }
+
+        public void Dispose() {
+            if (srcHandle.IsAllocated) {
+                srcHandle.Free();
+            }
+
+            if (dstHandle.IsAllocated) {
+                dstHandle.Free();
+            }
         }
     }
 
@@ -50,11 +69,6 @@ namespace ThousandAnt.Boids {
         private float3* centerFlock;
         private JobHandle boidsHandle;
         private Vector4[] colors;
-
-#if UNITY_EDITOR
-        private AtomicSafetyHandle safetySrc;
-        private AtomicSafetyHandle safetyDst;
-#endif
 
         private void Start() {
             tempBlock    = new MaterialPropertyBlock();
@@ -86,13 +100,14 @@ namespace ThousandAnt.Boids {
         }
 
         private void OnDisable() {
+            // Like the GameObjectBoidsRunner - complete all jobs before disabling
             boidsHandle.Complete();
 
+            // Free this memory
             if (noiseOffsets.IsCreated) {
                 noiseOffsets.Dispose();
             }
 
-            // Free this memory
             if (centerFlock != null) {
                 UnsafeUtility.Free(centerFlock, Allocator.Persistent);
                 centerFlock = null;
@@ -100,11 +115,14 @@ namespace ThousandAnt.Boids {
         }
 
         private unsafe void Update() {
+            // Complete all jobs at the start of the frame.
             boidsHandle.Complete();
 
             // Set up the transform so that we have cinemachine to look at
             transform.position = *centerFlock;
 
+            // Draw all elements, because we use a pinned array, the pointer is
+            // representative of the array.
             Graphics.DrawMeshInstanced(
                 Mesh,
                 0,
