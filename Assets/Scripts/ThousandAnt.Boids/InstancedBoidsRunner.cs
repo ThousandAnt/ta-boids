@@ -12,15 +12,26 @@ namespace ThousandAnt.Boids {
 
     internal unsafe class PinnedMatrixArray {
 
-        internal Matrix4x4[] Values;
+        internal Matrix4x4[] Src;   // Our source buffer for reading
+        internal Matrix4x4[] Dst;   // Our double buffer for writing
 
-        internal Matrix4x4* Ptr;
+        internal float4x4* SrcPtr;
+        internal float4x4* DstPtr;
+
+        internal int Size { get; private set; }
 
         internal PinnedMatrixArray(int size) {
-            Values = new Matrix4x4[size];
-            fixed (Matrix4x4* ptr = Values) {
-                Ptr = ptr;
+            Src = new Matrix4x4[size];
+            fixed (Matrix4x4* ptr = Src) {
+                SrcPtr = (float4x4*)ptr;
             }
+
+            Dst = new Matrix4x4[size];
+            fixed (Matrix4x4* ptr = Dst) {
+                DstPtr = (float4x4*)ptr;
+            }
+
+            Size = size;
         }
     }
 
@@ -34,16 +45,21 @@ namespace ThousandAnt.Boids {
         public Color             Final;
 
         private MaterialPropertyBlock tempBlock;
-        private PinnedMatrixArray srcMatrices;
+        private PinnedMatrixArray matrices;
         private NativeArray<float> noiseOffsets;
         private NativeArray<float4x4> dblBuffer;
         private float3* centerFlock;
         private JobHandle boidsHandle;
         private Vector4[] colors;
 
+#if UNITY_EDITOR
+        private AtomicSafetyHandle safetySrc;
+        private AtomicSafetyHandle safetyDst;
+#endif
+
         private void Start() {
             tempBlock    = new MaterialPropertyBlock();
-            srcMatrices  = new PinnedMatrixArray(Size);
+            matrices     = new PinnedMatrixArray(Size);
             noiseOffsets = new NativeArray<float>(Size, Allocator.Persistent);
             dblBuffer    = new NativeArray<float4x4>(Size, Allocator.Persistent);
             colors       = new Vector4[Size];
@@ -90,8 +106,6 @@ namespace ThousandAnt.Boids {
         }
 
         private unsafe void Update() {
-            Debug.LogError("InstancedBoidsRunner is not implemented!");
-            /*
             boidsHandle.Complete();
 
             // Set up the transform so that we have cinemachine to look at
@@ -101,15 +115,21 @@ namespace ThousandAnt.Boids {
                 Mesh,
                 0,
                 Material,
-                srcMatrices.Values,
-                srcMatrices.Values.Length,
+                matrices.Src,
+                matrices.Src.Length,
                 tempBlock,
                 Mode,
                 ReceiveShadows,
                 0,
                 null);
 
-            var batchedJob    = new BatchedJob {
+            var avgCenterJob = new BoidsPointerOnly.AverageCenterJob {
+                Matrices = (float4x4*)matrices.SrcPtr,
+                Center   = centerFlock,
+                Size     = matrices.Size
+            }.Schedule();
+
+            var boidJob      = new BoidsPointerOnly.BatchedBoidJob {
                 Weights       = Weights,
                 Goal          = Destination.position,
                 NoiseOffsets  = noiseOffsets,
@@ -118,24 +138,17 @@ namespace ThousandAnt.Boids {
                 MaxDist       = SeparationDistance,
                 Speed         = MaxSpeed,
                 RotationSpeed = RotationSpeed,
-                Size          = srcMatrices.Values.Length,
-                // Dst           = (float4x4*)(srcMatrices.Ptr),
-                Src           = dblBuffer
-            }.Schedule(srcMatrices.Values.Length, 32);
+                Size          = matrices.Size,
+                Src           = (float4x4*)matrices.SrcPtr,
+                Dst           = (float4x4*)matrices.DstPtr,
+            }.Schedule(matrices.Size, 32);
 
-            var avgCenterJob = new AverageCenterJob {
-                Center    = centerFlock,
-                Matrices  = dblBuffer,
-                Size      = srcMatrices.Values.Length
-            }.Schedule();
+            var combinedJob = JobHandle.CombineDependencies(boidJob, avgCenterJob);
 
-            boidsHandle = JobHandle.CombineDependencies(batchedJob, avgCenterJob);
-
-            boidsHandle = new CopyMatrixJob {
-                Dst = dblBuffer,
-                Src = srcMatrices.Ptr
-            }.Schedule(srcMatrices.Values.Length, 32, boidsHandle);
-            */
+            boidsHandle = new BoidsPointerOnly.CopyMatrixJob {
+                Dst = (float4x4*)matrices.SrcPtr,
+                Src = (float4x4*)matrices.DstPtr
+            }.Schedule(matrices.Size, 32, combinedJob);
         }
     }
 }
