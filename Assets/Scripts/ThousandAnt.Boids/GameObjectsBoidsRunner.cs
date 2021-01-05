@@ -57,7 +57,7 @@ namespace ThousandAnt.Boids {
             // Before this component is disabled, make sure that all the jobs are completed.
             boidsHandle.Complete();
 
-            // THen we dispose all the NativeArrays we allocate.
+            // Then we dispose all the NativeArrays we allocate.
             if (srcMatrices.IsCreated) {
                 srcMatrices.Dispose();
             }
@@ -68,6 +68,10 @@ namespace ThousandAnt.Boids {
 
             if (noiseOffsets.IsCreated) {
                 noiseOffsets.Dispose();
+            }
+
+            if (transformAccessArray.isCreated) {
+                transformAccessArray.Dispose();
             }
 
             if (center != null) {
