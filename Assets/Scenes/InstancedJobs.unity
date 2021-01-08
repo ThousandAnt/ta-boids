@@ -358,12 +358,12 @@ MonoBehaviour:
   MaxSpeed: 6
   RotationSpeed: 4
   Destination: {fileID: 1231730117}
-  Mesh: {fileID: 4300004, guid: 9ddab293e2a8af3499dac05f5fd6169c, type: 3}
-  Material: {fileID: 2100000, guid: 993359de5611ec04783017f6e5fd034d, type: 2}
+  Mesh: {fileID: 4300002, guid: d9808401c68af274a8edfbed3d1b53c7, type: 3}
+  Material: {fileID: 2100000, guid: cef0a95dfbd92f746bad9e0722c72921, type: 2}
   Mode: 1
   ReceiveShadows: 1
-  Initial: {r: 1, g: 1, b: 1, a: 1}
-  Final: {r: 0.3773585, g: 0.3773585, b: 0.3773585, a: 1}
+  Initial: {r: 0.4528302, g: 0.4528302, b: 0.4528302, a: 1}
+  Final: {r: 0.4528302, g: 0.4528302, b: 0.4528302, a: 1}
 --- !u!4 &532041481
 Transform:
   m_ObjectHideFlags: 0

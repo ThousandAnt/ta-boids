@@ -121,19 +121,21 @@ namespace ThousandAnt.Boids {
             // Set up the transform so that we have cinemachine to look at
             transform.position = *centerFlock;
 
-            // Draw all elements, because we use a pinned array, the pointer is
-            // representative of the array.
-            Graphics.DrawMeshInstanced(
-                Mesh,
-                0,
-                Material,
-                matrices.Src,
-                matrices.Src.Length,
-                tempBlock,
-                Mode,
-                ReceiveShadows,
-                0,
-                null);
+            for (int i = 0; i < Mesh.subMeshCount; i++) {
+                // Draw all elements, because we use a pinned array, the pointer is
+                // representative of the array.
+                Graphics.DrawMeshInstanced(
+                    Mesh,
+                    i,
+                    Material,
+                    matrices.Src,  // Matrices.Src is an array (Matrix4x4[])
+                    matrices.Src.Length,
+                    tempBlock,
+                    Mode,
+                    ReceiveShadows,
+                    0,
+                    null);
+            }
 
             var avgCenterJob = new BoidsPointerOnly.AverageCenterJob {
                 Matrices = (float4x4*)matrices.SrcPtr,
