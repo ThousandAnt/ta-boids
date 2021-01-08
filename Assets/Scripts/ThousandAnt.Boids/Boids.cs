@@ -45,16 +45,14 @@ namespace ThousandAnt.Boids {
         [NativeDisableUnsafePtrRestriction]
         public float3* Center;
 
-        public int Size;
-
         public void Execute() {
             var center = float3.zero;
-            for (int i = 0; i < Size; i++) {
+            for (int i = 0; i < Matrices.Length; i++) {
                 float4x4 m = Matrices[i];
                 center += m.Position();
             }
 
-            *Center = center /= Size;
+            *Center = center /= Matrices.Length;
         }
     }
 

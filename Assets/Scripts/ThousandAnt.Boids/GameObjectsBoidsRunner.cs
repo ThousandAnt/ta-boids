@@ -42,11 +42,11 @@ namespace ThousandAnt.Boids {
             transformAccessArray = new TransformAccessArray(transforms);
 
             // To pass from a Job struct back to our MonoBehaviour, we need to use a pointer. In newer packages there is
-            // NativeReference<T> which serves the same purpose as a pointer. This allows us to write the position 
+            // NativeReference<T> which serves the same purpose as a pointer. This allows us to write the position
             // back to our pointer so we can read it later in the main thread to use.
             center = (float3*)UnsafeUtility.Malloc(
-                UnsafeUtility.SizeOf<float3>(), 
-                UnsafeUtility.AlignOf<float3>(), 
+                UnsafeUtility.SizeOf<float3>(),
+                UnsafeUtility.AlignOf<float3>(),
                 Allocator.Persistent);
 
             // Set the pointer to the float3 to be the default value, or float3.zero.
@@ -96,11 +96,10 @@ namespace ThousandAnt.Boids {
             var avgCenterJob = new AverageCenterJob {
                 Matrices = srcMatrices,
                 Center   = center,
-                Size     = srcMatrices.Length
             }.Schedule();
 
             JobHandle boidJob;
-    
+
             // Compute boid - selectively use a multithreaded job or a single threaded job.
             if (!UseSingleThread) {
                 boidJob           = new BatchedBoidJob {
@@ -132,8 +131,8 @@ namespace ThousandAnt.Boids {
                 }.Schedule();
             }
 
-            // Combine all jobs to a single dependency, so we can pass this single dependency to the 
-            // CopyMatrixJob. The CopyMatrixJob needs to wait until all jobs are done so we can avoid 
+            // Combine all jobs to a single dependency, so we can pass this single dependency to the
+            // CopyMatrixJob. The CopyMatrixJob needs to wait until all jobs are done so we can avoid
             // concurrency issues.
             var combinedJob = JobHandle.CombineDependencies(avgCenterJob, boidJob, copyTransformJob);
 
